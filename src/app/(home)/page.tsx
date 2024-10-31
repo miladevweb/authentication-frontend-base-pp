@@ -6,6 +6,7 @@ export default async function Page() {
   const session = await auth()
   if (!session || !session.user) return null
 
+  console.log(session)
   const { name, image } = session.user
 
   return (
