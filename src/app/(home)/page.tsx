@@ -1,20 +1,17 @@
-import Image from 'next/image'
+// import Image from 'next/image'
 import { auth } from '@/lib/auth'
 import * as NextAuth from '@/components/NextAuth'
 
 export default async function Page() {
   const session = await auth()
-  if (!session || !session.user) return null
+  if (!session || !session.user) return <NextAuth.SignIn />
 
-  console.log(session)
-  const { name, image } = session.user
+  // const { name, image } = session.user
 
   return (
     <div>
-      <NextAuth.SignIn />
-
       <picture className="size-60">
-        <Image
+        {/* <Image
           alt={name!}
           src={image!}
           //
@@ -22,7 +19,7 @@ export default async function Page() {
           priority
           sizes="20vw"
           className="rounded-full"
-        />
+        /> */}
       </picture>
 
       <NextAuth.SignOut />

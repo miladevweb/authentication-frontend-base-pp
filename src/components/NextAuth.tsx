@@ -8,7 +8,12 @@ export function SignIn() {
         await signIn()
       }}
     >
-      <button type="submit">Sign In</button>
+      <button
+        type="submit"
+        className="border-[3px] border-blue-500 text-blue-500 font-medium text-lg px-4 py-1 rounded-lg"
+      >
+        Sign In
+      </button>
     </form>
   )
 }
