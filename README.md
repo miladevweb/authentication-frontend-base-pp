@@ -132,3 +132,95 @@ return token;
 - **token:** El JWT que se utiliza para manejar la autenticación en el servidor. Puede contener información sobre la sesión y se gestiona de manera interna.
 
 </details>
+
+<details>
+  <summary>Authorize Credential Method - Credentials Provider</summary>
+
+- `authorize` method in the Credentials Provider returns either a user object (if the credentials are valid) or null (if they are invalid).
+
+- We should set the user object in session unless you wanna use OAuth providers, they do it by default.
+
+```typescript
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+
+interface User {
+  id: string
+  name: string
+  email: string
+}
+
+interface Credentials {
+  username: string
+  password: string
+}
+
+export default NextAuth({
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        username: { label: 'Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+
+      // We should set the user object in session unless you wanna use OAuth providers, they do it by default.
+      async authorize(credentials: Credentials): Promise<User | null> {
+        const user = await fetchUserFromDatabase(credentials.username, credentials.password)
+
+        if (user) {
+          return user // Valid credentials, return user object
+        } else {
+          return null // Invalid credentials
+        }
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id // Save user id in token
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id // Add user id to session
+      }
+      return session
+    },
+  },
+})
+
+// Mock function to simulate fetching user from a database
+async function fetchUserFromDatabase(username: string, password: string): Promise<User | null> {
+  // Replace this with your actual database logic
+  const mockUser: User = { id: '1', name: 'John Doe', email: 'john@example.com' }
+
+  if (username === 'john' && password === 'password') {
+    return mockUser // Simulate valid user
+  }
+
+  return null // Simulate invalid user
+}
+```
+
+<br>
+
+We can use the `session` callback to add the user ID to the session object.
+
+```typescript
+callbacks: {
+  async session({ session, token }) {
+    if (token) {
+      session.user.id = token.id; // Include user ID in session
+      session.user.name = token.name; // Include user name if available
+    }
+    return session;
+  }
+}
+```
+
+And we can
+
+</details>
