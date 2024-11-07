@@ -1,99 +1,102 @@
 import 'next-auth/jwt'
 import NextAuth from 'next-auth'
+import { jwtDecode } from 'jwt-decode'
+import { FormDataValues } from '@/types'
 import CredentialsProvider from 'next-auth/providers/credentials'
+
+const API_SERVER_BASE_URL = process.env.API_SERVER_BASE_URL
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     CredentialsProvider({
       credentials: {
-        email: {},
-        password: {},
+        email: { label: 'Email', type: 'email', placeholder: 'john.doe@example.com' },
+        password: { label: 'Password', type: 'password', placeholder: 'Your password' },
       },
+
       async authorize(credentials) {
         if (credentials === null) return null
+        const credentialsCopy = credentials as FormDataValues
 
-        const response = await fetch(process.env.API_SERVER_BASE_URL! + '/token', {
+        const tokenResponse = await fetch(API_SERVER_BASE_URL + '/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-
-          body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: 'refresh_token',
-          }),
+          body: new URLSearchParams(credentialsCopy),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         })
 
-        if (!response.ok) {
-          const msg = await response.json()
-          throw new Error(msg.error)
-        }
+        if (!tokenResponse.ok) return null
 
-        const data = await response.json()
-        return data
+        // Get User Info
+        const { access, refresh } = await tokenResponse.json()
+
+        const userResponse = await fetch(API_SERVER_BASE_URL + '/user', {
+          headers: { Authorization: 'Bearer ' + access },
+        })
+
+        if (!userResponse.ok) return null
+        const user = await userResponse.json()
+        return {
+          ...user,
+          access,
+          refresh,
+        }
       },
     }),
   ],
-  // callbacks: {
-  //   async jwt({ token, account }) {
-  //     if (account) {
-  //       // First-time login, save the `access_token`, its expiry and the `refresh_token`
-  //       return {
-  //         ...token,
-  //         access_token: account.access_token,
-  //         expires_at: account.expires_at,
-  //         refresh_token: account.refresh_token,
-  //       } as JWT
-  //     } else if (Date.now() < token.expires_at * 1000) {
-  //       // Subsequent logins, but the `access_token` is still valid
-  //       return token
-  //     } else {
-  //       // Subsequent logins, but the `access_token` has expired, try to refresh it
-  //       if (!token.refresh_token) throw new TypeError('Missing refresh_token')
 
-  //       try {
-  //         const response = await fetch('http://localhost:3000/api/token', {
-  //           method: 'POST',
-  //           body: new URLSearchParams({
-  //             grant_type: 'refresh_token',
-  //             refresh_token: token.refresh_token,
-  //           }),
-  //         })
+  session: { strategy: 'jwt' },
+  // pages: { signIn: '/signin' },
 
-  //         const tokensOrError = await response.json()
+  callbacks: {
+    async jwt({ token, user }) {
+      if (token.access_token) {
+        const decodedToken = jwtDecode(token.access_token)
+        token.accessTokenExpires = decodedToken.exp! * 1000
 
-  //         if (!response.ok) throw tokensOrError
+        if (Date.now() < token.accessTokenExpires) return token
+        else {
+          const refreshResponse = await fetch(API_SERVER_BASE_URL + '/refresh', {
+            method: 'POST',
+            body: new URLSearchParams({ refresh: token.refresh_token }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          })
 
-  //         const newTokens = tokensOrError as {
-  //           access_token: string
-  //           expires_in: number
-  //           refresh_token?: string
-  //         }
+          if (!refreshResponse.ok) await signOut()
+          const { token: newAccessToken } = await refreshResponse.json()
+          token.access_token = newAccessToken
+        }
+      }
 
-  //         token.access_token = newTokens.access_token
-  //         token.expires_at = Math.floor(Date.now() / 1000 + newTokens.expires_in)
-  //         // Some providers only issue refresh tokens once, so preserve if we did not get a new one
-  //         if (newTokens.refresh_token) token.refresh_token = newTokens.refresh_token
-  //         return token
-  //       } catch (error) {
-  //         console.error('Error refreshing access_token', error)
-  //         // If we fail to refresh the token, return an error so we can handle it on the page
-  //         token.error = 'RefreshTokenError'
-  //         return token
-  //       }
-  //     }
-  //   },
+      if (user) {
+        token.id = user.id
+        token.name = user.name
+        token.email = user.email
+        token.picture = user.image
+        token.access_token = user.access
+        token.refresh_token = user.refresh
+      }
 
-  //   async session({ session, token }) {
-  //     session.error = token.error
-  //     return session
-  //   },
-  // },
+      return token
+    },
+
+    async session({ session, token }) {
+      session.user.id = token.id as string
+      session.user.access = token.access_token
+      session.user.refresh = token.refresh_token
+
+      return { ...session }
+    },
+  },
 })
 
 declare module 'next-auth' {
   interface Session {
     error?: 'RefreshTokenError'
+  }
+
+  interface User {
+    access: string
+    refresh: string
   }
 }
 
@@ -101,7 +104,8 @@ declare module 'next-auth/jwt' {
   interface JWT {
     access_token: string
     expires_at: number
-    refresh_token?: string
+    refresh_token: string
     error?: 'RefreshTokenError'
+    accessTokenExpires: number
   }
 }

@@ -1,6 +1,0 @@
-### Get Token
-POST {{$dotenv API_SERVER_BASE_URL}}/refresh
-Authorization: Bearer {{$dotenv AUTH_SECRET}}
-Content-Type: application/x-www-form-urlencoded
-
-grant_type={{$dotenv AUTH_GRANT_TYPE}}&refresh_token={{$dotenv AUTH_SECRET}}

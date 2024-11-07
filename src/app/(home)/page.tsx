@@ -10,6 +10,8 @@ export default async function Page() {
 
   return (
     <div>
+      <pre>{JSON.stringify(session.user.access, null, 2)}</pre>
+
       <picture className="size-60">
         {/* <Image
           alt={name!}
