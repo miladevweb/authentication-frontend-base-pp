@@ -1,70 +1,19 @@
 import 'next-auth/jwt'
+import { db } from '@/db'
 import NextAuth from 'next-auth'
 import { jwtDecode } from 'jwt-decode'
-import { FormDataValues } from '@/types'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import authConfig from './auth.config'
+import type { Adapter } from 'next-auth/adapters'
+import { PrismaAdapter } from '@auth/prisma-adapter'
 
 const API_SERVER_BASE_URL = process.env.API_SERVER_BASE_URL
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    CredentialsProvider({
-      credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'john.doe@example.com' },
-        password: { label: 'Password', type: 'password', placeholder: 'Your password' },
-      },
-
-      async authorize(credentials) {
-        if (credentials === null) return null
-        const credentialsCopy = credentials as FormDataValues
-
-        const tokenResponse = await fetch(API_SERVER_BASE_URL + '/login', {
-          method: 'POST',
-          body: new URLSearchParams(credentialsCopy),
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        })
-
-        if (!tokenResponse.ok) return null
-
-        // Get User Info
-        const { access, refresh } = await tokenResponse.json()
-
-        const userResponse = await fetch(API_SERVER_BASE_URL + '/user', {
-          headers: { Authorization: 'Bearer ' + access },
-        })
-
-        if (!userResponse.ok) return null
-        const user = await userResponse.json()
-        return {
-          ...user,
-          access,
-          refresh,
-        }
-      },
-    }),
-  ],
-
-  session: { strategy: 'jwt' },
-  // pages: { signIn: '/signin' },
-
   callbacks: {
     async jwt({ token, user }) {
       if (token.access_token) {
         const decodedToken = jwtDecode(token.access_token)
         token.accessTokenExpires = decodedToken.exp! * 1000
-
-        if (Date.now() < token.accessTokenExpires) return token
-        else {
-          const refreshResponse = await fetch(API_SERVER_BASE_URL + '/refresh', {
-            method: 'POST',
-            body: new URLSearchParams({ refresh: token.refresh_token }),
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          })
-
-          if (!refreshResponse.ok) await signOut()
-          const { token: newAccessToken } = await refreshResponse.json()
-          token.access_token = newAccessToken
-        }
       }
 
       if (user) {
@@ -74,12 +23,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.picture = user.image
         token.access_token = user.access
         token.refresh_token = user.refresh
+        return token
       }
 
-      return token
+      if (Date.now() < token.accessTokenExpires) return token
+
+      try {
+        const refreshResponse = await fetch(API_SERVER_BASE_URL + '/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: token.refresh_token }),
+        })
+
+        if (!refreshResponse.ok) {
+          const error = await refreshResponse.json()
+          throw new Error(error.message)
+        }
+        const { token: newAccessToken } = await refreshResponse.json()
+        token.access_token = newAccessToken
+        return token
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(error.message, '🔥 refresh error')
+        }
+
+        return {
+          ...token,
+          error: 'RefreshTokenError',
+        }
+      }
     },
 
+    // Handles session
     async session({ session, token }) {
+      if (token.error === 'RefreshTokenError') {
+        return { ...session, error: 'RefreshTokenError' }
+      }
+
       session.user.id = token.id as string
       session.user.access = token.access_token
       session.user.refresh = token.refresh_token
@@ -87,6 +67,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return { ...session }
     },
   },
+
+  ...authConfig,
+  session: { strategy: 'jwt' },
+  pages: { signIn: '/auth/login' },
+  adapter: PrismaAdapter(db) as Adapter,
 })
 
 declare module 'next-auth' {

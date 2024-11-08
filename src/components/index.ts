@@ -1,3 +1,4 @@
 import SideBar from './SideBar'
+import LoginForm from './LoginForm'
 
-export { SideBar }
+export { SideBar, LoginForm }
