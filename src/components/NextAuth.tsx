@@ -16,7 +16,7 @@ export function SignOut() {
     <form
       action={async () => {
         'use server'
-        await signOut({ redirect: true, redirectTo: '/auth/login' })
+        await signOut()
       }}
     >
       <button

@@ -4,11 +4,8 @@ import { doLogout } from '@/actions'
 
 export default function SignOutLogic() {
   useEffect(() => {
-    const some = async () => {
-      await doLogout()
-    }
-    some()
+    (async () => await doLogout())()
   }, [])
 
-  return <></>
+  return null
 }
