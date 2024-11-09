@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import { doLogout } from '@/actions'
 
-export default function SignOutLogic() {
+export default function MakeLogout() {
   useEffect(() => {
     (async () => await doLogout())()
   }, [])
