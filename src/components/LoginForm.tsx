@@ -11,16 +11,17 @@ export default function LoginForm() {
 
     try {
       const formData = new FormData(event.currentTarget as HTMLFormElement)
+      const response = await doLogin(formData) // Returns undefined if no error
 
-      const response = await doLogin(formData)
-
-      if (!!response.error) {
-        console.log(response.error, 'response.error 🔥')
-      } else {
-        router.push('/')
-      }
+      if (response && response.error) throw new Error(response.error)
+      else router.push('/')
+      //
     } catch (error) {
-      console.error(error, 'error 🔥')
+      if (error instanceof Error) {
+        alert(error.message)
+        return
+      }
+
       alert('Something went wrong')
     }
   }
@@ -28,7 +29,7 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-[50%] place-content-center text-black"
+      className="w-1/2 grid grid-cols-[50%] place-content-center text-black gap-y-3"
     >
       <input
         type="email"
@@ -41,7 +42,12 @@ export default function LoginForm() {
         placeholder="Password"
       />
 
-      <button type="submit">Login</button>
+      <button
+        type="submit"
+        className="outline outline-2 outline-blue-600 w-1/2 justify-self-center text-blue-600 font-medium text-lg"
+      >
+        Login
+      </button>
     </form>
   )
 }

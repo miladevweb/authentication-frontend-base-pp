@@ -6,7 +6,7 @@ const { auth: middleware } = NextAuth(authConfig)
 
 export default middleware(async (request) => {
   const { nextUrl, auth } = request
-  const isAuthenticated = !!auth?.user
+  const isAuthenticated = !!auth
 
   const isPublicRoute = !!PUBLIC_ROUTES.find((route) => nextUrl.pathname.startsWith(route)) && !PROTECTED_SUB_ROUTES.find((route) => nextUrl.pathname.includes(route))
 

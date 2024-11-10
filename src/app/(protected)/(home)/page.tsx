@@ -1,10 +1,15 @@
 import Image from 'next/image'
 import { auth } from '@/lib/auth'
 import * as NextAuth from '@/components/NextAuth'
+import MakeLogout from './_components/MakeLogout'
 
 export default async function Page() {
   const session = await auth()
-  const { access, name, image } = session!.user!
+
+  // Make Logout
+  if (!session || !session.user || session.error === 'RefreshTokenError') return <MakeLogout />
+
+  const { access, name, image } = session.user
 
   return (
     <div>

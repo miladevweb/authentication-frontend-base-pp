@@ -57,7 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Handles session
     async session({ session, token }) {
       if (token.error === 'RefreshTokenError') {
-        return { ...session, error: 'RefreshTokenError' }
+        return { ...session, error: token.error }
       }
 
       session.user.id = token.id as string
