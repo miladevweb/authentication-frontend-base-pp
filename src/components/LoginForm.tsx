@@ -1,53 +1,85 @@
 'use client'
-import { FormEvent } from 'react'
 import { doLogin } from '@/actions'
+import { Input } from './shadcn/input'
+import { Button } from './shadcn/button'
+import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './shadcn/form'
+import { LoginSchema, LoginSchemaType } from '@/utils/FormValidator'
+import { toast } from 'sonner'
 
 export default function LoginForm() {
   const router = useRouter()
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
+  const form = useForm<LoginSchemaType>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  const onSubmit = async (values: LoginSchemaType) => {
+    const formData = new FormData()
+    formData.append('email', values.email)
+    formData.append('password', values.password)
 
     try {
-      const formData = new FormData(event.currentTarget as HTMLFormElement)
-      const response = await doLogin(formData) // Returns undefined if no error
-
+      const response = await doLogin(formData)
       if (response && response.error) throw new Error(response.error)
       else router.push('/')
       //
     } catch (error) {
       if (error instanceof Error) {
-        alert(error.message)
+        toast.error(error.message)
         return
       }
-
       alert('Something went wrong')
     }
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-1/2 grid grid-cols-[50%] place-content-center text-black gap-y-3"
-    >
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-      />
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-      />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="someone@gmail.com"
+                  {...field}
+                />
+              </FormControl>
 
-      <button
-        type="submit"
-        className="outline outline-2 outline-blue-600 w-1/2 justify-self-center text-blue-600 font-medium text-lg"
-      >
-        Login
-      </button>
-    </form>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="##########"
+                  {...field}
+                />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">Login</Button>
+      </form>
+    </Form>
   )
 }

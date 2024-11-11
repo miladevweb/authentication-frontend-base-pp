@@ -62,7 +62,7 @@
 @layer base {
   * {
     @apply border-border;
-    outline: solid 2px orangered;
+    /* outline: solid 2px orangered; */
   }
 
   body {

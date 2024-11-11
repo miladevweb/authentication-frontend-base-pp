@@ -1,4 +1,5 @@
 import '@/components/index.css'
+import { Toaster } from '@/components/shadcn/sonner'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -18,7 +19,10 @@ export default function RootLayout({
       className="dark"
       suppressHydrationWarning
     >
-      <body>{children}</body>
+      <body>
+        <main>{children}</main>
+        <Toaster />
+      </body>
     </html>
   )
 }
