@@ -42,7 +42,6 @@ export default function LoginForm() {
 
       console.error(error)
       toast.error('Something went wrong')
-      return
     }
   }
 

@@ -1,12 +1,33 @@
 'use server'
+import { AuthError } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { signOut, signIn } from '@/lib/auth'
-import { AuthError } from 'next-auth'
 
 export async function doLogout() {
   await signOut({ redirect: false })
   redirect('/auth/login')
+}
+
+export async function doRegister(formData: FormData) {
+  try {
+    const response = await fetch(process.env.API_SERVER_BASE_URL + '/register', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message)
+    }
+
+    revalidatePath('/')
+    return
+    //
+  } catch (error) {
+    if (error instanceof Error) return { error: error.message }
+    return { error: 'Something went wrong' }
+  }
 }
 
 export async function doLogin(formData: FormData) {

@@ -1,6 +1,9 @@
 'use client'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import { doRegister } from '@/actions'
 import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
 import { Input } from '@/components/shadcn/input'
 import { Button } from '@/components/shadcn/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,6 +11,8 @@ import { RegisterSchema, RegisterSchemaType } from '@/utils/FormValidator'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/shadcn/form'
 
 export default function RegisterForm() {
+  const router = useRouter()
+
   const form = useForm<RegisterSchemaType>({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
@@ -18,8 +23,32 @@ export default function RegisterForm() {
     },
   })
 
-  const onSubmit = (values: RegisterSchemaType) => {
-    console.log(values)
+  const onSubmit = async (values: RegisterSchemaType) => {
+    const formData = new FormData()
+    formData.append('name', values.name)
+    formData.append('email', values.email)
+    formData.append('password', values.password)
+    formData.append('image', values.thumbnail)
+
+    try {
+      const response = await doRegister(formData)
+      if (response && response.error) throw new Error(response.error)
+      else {
+        toast.success('Registered successfully - Please login')
+        router.push('/auth/login')
+      }
+
+      //
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error.message)
+        toast.error(error.message)
+        return
+      }
+
+      console.log(error)
+      toast.error('Something went wrong')
+    }
   }
 
   return (
@@ -109,7 +138,7 @@ export default function RegisterForm() {
           )}
         />
 
-        <Button type="submit">Login</Button>
+        <Button type="submit">Register</Button>
 
         <Link
           href={'/auth/login'}
