@@ -1,6 +1,9 @@
 import '@/components/index.css'
-import { Toaster } from '@/components/shadcn/sonner'
 import type { Metadata } from 'next'
+import { Toaster } from '@/components/shadcn/sonner'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Next Authentication | Leonard J.',
@@ -19,7 +22,7 @@ export default function RootLayout({
       className="dark"
       suppressHydrationWarning
     >
-      <body>
+      <body className={inter.className}>
         <main>{children}</main>
         <Toaster />
       </body>

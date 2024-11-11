@@ -65,6 +65,10 @@
     /* outline: solid 2px orangered; */
   }
 
+  a > span {
+    @apply underline;
+  }
+
   body {
     @apply bg-background text-foreground overflow-x-clip min-h-screen;
   }
