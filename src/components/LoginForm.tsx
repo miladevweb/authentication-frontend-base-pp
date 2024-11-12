@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { doLogin } from '@/actions'
 import { Input } from './shadcn/input'
@@ -8,7 +9,6 @@ import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoginSchema, LoginSchemaType } from '@/utils/FormValidator'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './shadcn/form'
-import Link from 'next/link'
 
 export default function LoginForm() {
   const router = useRouter()

@@ -11,6 +11,7 @@ const API_SERVER_BASE_URL = process.env.API_SERVER_BASE_URL
 export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
+      console.log('we are in jwt callback')
       if (token.access_token) {
         const decodedToken = jwtDecode(token.access_token)
         token.accessTokenExpires = decodedToken.exp! * 1000

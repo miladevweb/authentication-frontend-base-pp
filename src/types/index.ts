@@ -13,3 +13,12 @@ export enum ErrorReason {
   INVALID_TOKEN,
   USER_NOT_FOUND,
 }
+
+export type User = {
+  id: string
+  name: string
+  email: string
+  image: string
+  access: string
+  refresh: string
+}
