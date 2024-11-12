@@ -1,5 +1,8 @@
 import '@/components/index.css'
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Next Authentication | Leonard J.',
@@ -17,7 +20,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
     >
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
